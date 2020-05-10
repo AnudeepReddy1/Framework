@@ -6,7 +6,7 @@ class MySQLServer implements MyDBConnection
 	{
 		Connection connection = null;
 		String dataBase = "dbAnudeep";
-		String userName = "rooty";
+		String userName = "root";
 		String password = "pwd";
 		String url = "jdbc:mysql://165.22.14.77/" + dataBase + "?AautoReconnect=true&useSSL=false";
 		try
