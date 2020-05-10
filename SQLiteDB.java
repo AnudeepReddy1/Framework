@@ -14,6 +14,7 @@ class SQLiteDB implements MyDBConnection
 		catch(Exception e)
 		{
 			e.printStackTrace();
+			System.exit(1);
 		}
 		finally
 		{

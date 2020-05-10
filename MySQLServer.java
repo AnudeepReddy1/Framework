@@ -6,7 +6,7 @@ class MySQLServer implements MyDBConnection
 	{
 		Connection connection = null;
 		String dataBase = "dbAnudeep";
-		String userName = "root";
+		String userName = "rooty";
 		String password = "pwd";
 		String url = "jdbc:mysql://165.22.14.77/" + dataBase + "?AautoReconnect=true&useSSL=false";
 		try
@@ -18,6 +18,7 @@ class MySQLServer implements MyDBConnection
 		catch(Exception e)
 		{
 			e.printStackTrace();
+			System.exit(1);
 		}
 		finally
 		{
