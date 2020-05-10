@@ -27,19 +27,26 @@ class CRUD_Operations
 		{
 			MyDBConnection myDbConnection = (MyDBConnection)Class.forName(className).newInstance();
 			connection = myDbConnection.getMyConnection();
-			System.out.print("Enter table name: ");
-			tableName = scanner.next();
+			myDbConnection = null;
+			System.gc();
 			getColumnNames();
+		}
+		catch(ClassNotFoundException e)
+		{
+			System.out.println("Please check if proper database name is passed as argument!");
+			System.exit(1);
 		}
 		catch(Exception e)
 		{
-			System.out.println("Please check if proper class name is passed as argument!");
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 
 	void getColumnNames()
 	{
+		System.out.print("Enter table name: ");
+		tableName = scanner.next();
 		String query = "select * from " + tableName;
 		try
 		{
@@ -63,7 +70,8 @@ class CRUD_Operations
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
+			System.out.println(e.getMessage());
+			System.exit(1);
 		}
 	}
 
@@ -105,6 +113,7 @@ class CRUD_Operations
 			{
 				System.out.println("Failed to insert try again.");
 			}
+			// connection.close();
 		}
 		catch(Exception e)
 		{
@@ -139,7 +148,7 @@ class CRUD_Operations
 			{
 				System.out.println("No records available.");
 			}
-			connection.close();
+			
 		}
 		catch(Exception e)
 		{
@@ -180,6 +189,7 @@ class CRUD_Operations
 			{
 				printInvalidChoice();
 			}
+			// connection.close();
 		}
 		catch(InputMismatchException i)
 		{
