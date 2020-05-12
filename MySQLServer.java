@@ -19,10 +19,7 @@ class MySQLServer implements MyDBConnection
 		{
 			e.printStackTrace();
 			System.exit(1);
-		}
-		finally
-		{
-			return connection;
-		}
+		}	
+		return connection;
 	}
 }

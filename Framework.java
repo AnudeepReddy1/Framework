@@ -1,19 +1,30 @@
 //Framework
+import java.util.*;
 class Framework
 {
 	public static void main(String[] args)
 	{
-		CRUD_Operations crud_operations = new CRUD_Operations(args[0]);
-		// crud_operations.update();
-		// crud_operations.insert();
-		// crud_operations.display();
 		int choice;
+		String className;
+		Scanner scanner = new Scanner(System.in);
+
+		if(args.length == 1)
+		{
+			className = args[0];
+		}
+		else
+		{
+			System.out.print("Enter class name: ");
+			className = scanner.next();
+		}
+
+		CRUD_Operations crud_operations = new CRUD_Operations(className);
 		while(true)
 		{
 			try
 			{
 				System.out.print("1. Insert a record\n2. Display\n3. Update\n4. Delete\n5. Exit\nEnter your choice: ");
-				choice = crud_operations.scanner.nextInt();
+				choice = scanner.nextInt();
 				switch(choice)
 				{
 					case 1 : crud_operations.insert();

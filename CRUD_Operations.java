@@ -15,17 +15,21 @@ class CRUD_Operations
 {
 	Connection connection = null;
 	String tableName;
+	String className;
 	String insertQuery;
 	int countOfColumns; 
 	String id;
 	ArrayList<String> columnNames = new ArrayList<String>();
+	ArrayList<String> primaryKeys = new ArrayList<String>();
+	String statusColumn = null;
 	Scanner scanner = new Scanner(System.in);
 
-	public CRUD_Operations(String className)
+	public CRUD_Operations(String classNam)
 	{
+		className = classNam;
 		try
 		{
-			MyDBConnection myDbConnection = (MyDBConnection)Class.forName(className).newInstance();
+			MyDBConnection myDbConnection = (MyDBConnection)Class.forName(classNam).newInstance();
 			connection = myDbConnection.getMyConnection();
 			myDbConnection = null;
 			System.gc();
@@ -47,6 +51,7 @@ class CRUD_Operations
 	{
 		System.out.print("Enter table name: ");
 		tableName = scanner.next();
+		getPrimaryKeys();
 		String query = "select * from " + tableName;
 		try
 		{
@@ -56,16 +61,18 @@ class CRUD_Operations
 			countOfColumns = resultSetMetaData.getColumnCount();
 			for(int counter = 1; counter <= countOfColumns; counter++)
 			{
-				columnNames.add(resultSetMetaData.getColumnName(counter));
-			}
-			if(columnNames.get(0).toLowerCase().equals("status") && countOfColumns > 2)
-			{
-				generateInsertQuery();
-			}
-			else
-			{
-				System.out.println("To run this framework a table with at-least three columns are required in which first one should be \"status\".");
-				System.exit(1);
+				String columnName = resultSetMetaData.getColumnName(counter);
+				if(!columnName.equals(primaryKeys.get(0)))
+				{
+					if(columnName.toLowerCase().equals("status"))
+					{
+						statusColumn = columnName;
+					}
+					else
+					{
+						columnNames.add(columnName);	
+					}
+				}
 			}
 		}
 		catch(Exception e)
@@ -75,12 +82,40 @@ class CRUD_Operations
 		}
 	}
 
+	void getPrimaryKeys()
+	{
+		String query;
+		if(className.equals("SQLiteDB"))
+		{	
+			query = "SELECT p.name AS col_name, p.pk AS col_is_pk FROM sqlite_master m LEFT OUTER JOIN pragma_table_info((m.name)) p ON m.name <> p.name WHERE m.type = 'table' and m.name = '" + tableName + "' and p.pk = 1 ";		
+		}
+		else
+		{
+			String dataBase = "dbAnudeep";
+			query = "select stats.column_name from information_schema.tables as tabs inner join information_schema.statistics as stats on stats.table_schema = tabs.table_schema and stats.table_name = tabs.table_name and stats.index_name = 'primary' where tabs.table_schema = '" + dataBase + "' and tabs.table_type = 'BASE TABLE' and tabs.table_name = '" + tableName +"'";
+		}
+
+		try
+		{
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			while(resultSet.next())
+			{
+				primaryKeys.add(resultSet.getString(1));
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	void generateInsertQuery()
 	{
 		String placeHolders = "";
 		String parameters = "";
 		int countOfColumns = columnNames.size();
-		for(int counter = 2; counter < countOfColumns - 1; counter++)
+		for(int counter = 0; counter < countOfColumns - 1; counter++)
 		{
 			parameters = parameters + columnNames.get(counter) + ", ";
 			placeHolders = placeHolders + "?, ";
@@ -95,7 +130,7 @@ class CRUD_Operations
 		try
 		{
 			PreparedStatement preparedStatement = connection.prepareStatement(insertQuery, returnId);
-			for(int counter = 2; counter < countOfColumns; counter++)
+			for(int counter = 0; counter < countOfColumns; counter++)
 			{
 				String parameter = columnNames.get(counter);
 				System.out.print("Enter " + parameter + ": ");
@@ -107,13 +142,12 @@ class CRUD_Operations
 			if(resultSet.next() && rowsEffected > 0)
 			{
 				System.out.println("Record inserted succesfully.");
-				System.out.println("Your " + columnNames.get(1) + " is " + resultSet.getInt(1) + ".");
+				System.out.println("Your " + primaryKeys.get(0) + " is " + resultSet.getInt(1) + ".");
 			}
 			else
 			{
 				System.out.println("Failed to insert try again.");
 			}
-			// connection.close();
 		}
 		catch(Exception e)
 		{
@@ -123,23 +157,33 @@ class CRUD_Operations
 
 	void display()
 	{
-		String query = "select * from " + tableName + " where " + columnNames.get(0) + " = 1";
+		String query;
+		if(statusColumn != null)
+		{
+			query = "select * from " + tableName + " where " + statusColumn + " = 1";
+		}
+		else
+		{
+			query = "select * from " + tableName;
+		}
 		try
 		{
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(query);
 			if(resultSet.next())
 			{
-				for(int counter = 1; counter < countOfColumns; counter++)
+				System.out.print(String.format("%15s", primaryKeys.get(0)));
+				for(int counter = 0; counter < columnNames.size(); counter++)
 				{
 					System.out.print(String.format("%15s", columnNames.get(counter)));
 				}
 				System.out.println("\n");
 				do
 				{
-					for(int counter = 2; counter <= countOfColumns; counter++)
+					System.out.print(String.format("%15s", resultSet.getString(primaryKeys.get(0))));
+					for(int counter = 0; counter < columnNames.size(); counter++)
 					{
-						System.out.print(String.format("%15s", resultSet.getString(counter)));
+						System.out.print(String.format("%15s", resultSet.getString(columnNames.get(counter))));
 					}
 					System.out.println();
 				}while(resultSet.next());
@@ -189,7 +233,6 @@ class CRUD_Operations
 			{
 				printInvalidChoice();
 			}
-			// connection.close();
 		}
 		catch(InputMismatchException i)
 		{
@@ -204,7 +247,15 @@ class CRUD_Operations
 
 	void delete()
 	{
-		String query = "update " + tableName + " set " + columnNames.get(0) + " = 0 " + "where " + columnNames.get(0) + " = 1 and " + columnNames.get(1) + " = ?";
+		String query;
+		if(statusColumn != null)
+		{
+			query = "update " + tableName + " set " + columnNames.get(0) + " = 0 " + "where " + columnNames.get(0) + " = 1 and " + columnNames.get(1) + " = ?";
+		}
+		else
+		{
+			query = "delete from " + tableName + " where " + primaryKeys.get(0) + " = ?";
+		}
 		try
 		{
 			readId();
